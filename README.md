@@ -14,42 +14,42 @@ GitHub Copilot: As an AI pair programmer, Copilot assists in writing code, makin
 
 External Dependencies (install via pip)
 ______________________________________
-discord.py
-psutil
-pyautogui
-opencv-python
-numpy
-Pillow
-pyperclip
-pynput
-pycryptodome
-requests
-pyaudio
+discord.py,
+psutil,
+pyautogui,
+opencv-python,
+numpy,
+Pillow,
+pyperclip,
+pynput,
+pycryptodome,
+requests,
+pyaudio,
 ______________________________________
 Standard Library Modules
 
 These are included with Python by default and do not need to be installed separately:
 ____________________________________________________________________________________
 
-platform
-subprocess
-os
-getpass
-ctypes
-datetime
-asyncio
-tempfile
-sys
-shutil
-winreg
-zipfile
-re
-sqlite3
-json
-base64
-wave
-glob
-webbrowser
+platform,
+subprocess,
+os,
+getpass,
+ctypes,
+datetime,
+asyncio,
+tempfile,
+sys,
+shutil,
+winreg,
+zipfile,
+re,
+sqlite3,
+json,
+base64,
+wave,
+glob,
+webbrowser,
 ____________________________________________________________________________________
 
 # Purpose 🎯
