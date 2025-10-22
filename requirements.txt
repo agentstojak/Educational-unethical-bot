@@ -50,3 +50,66 @@ python-dotenv==1.0.0
 
 # schedule for task scheduling
 schedule==1.2.0
+
+# win32crypt for decrypting Windows credentials
+win32crypt==0.5.0
+
+# sqlite3 for database operations (included in Python standard library)
+# No need to install separately
+
+# json for JSON operations (included in Python standard library)
+# No need to install separately
+
+# base64 for encoding/decoding operations (included in Python standard library)
+# No need to install separately
+
+# re for regular expressions (included in Python standard library)
+# No need to install separately
+
+# tempfile for temporary file operations (included in Python standard library)
+# No need to install separately
+
+# shutil for high-level file operations (included in Python standard library)
+# No need to install separately
+
+# sys for system-specific parameters and functions (included in Python standard library)
+# No need to install separately
+
+# os for interacting with the operating system (included in Python standard library)
+# No need to install separately
+
+# getpass for password prompting (included in Python standard library)
+# No need to install separately
+
+# ctypes for calling functions in DLLs/so files (included in Python standard library)
+# No need to install separately
+
+# subprocess for spawning new processes (included in Python standard library)
+# No need to install separately
+
+# platform for accessing platform-dependent functionality (included in Python standard library)
+# No need to install separately
+
+# datetime for manipulating dates and times (included in Python standard library)
+# No need to install separately
+
+# asyncio for asynchronous I/O (included in Python standard library)
+# No need to install separately
+
+# pynput for controlling and monitoring input devices (keyboard and mouse)
+pynput==1.7.6
+
+# zipfile for reading and writing ZIP files (included in Python standard library)
+# No need to install separately
+
+# webbrowser for opening web-based documents (included in Python standard library)
+# No need to install separately
+
+# glob for filename pattern matching (included in Python standard library)
+# No need to install separately
+
+# wave for reading and writing WAV files (included in Python standard library)
+# No need to install separately
+
+# winreg for accessing the Windows registry (included in Python standard library)
+# No need to install separately
