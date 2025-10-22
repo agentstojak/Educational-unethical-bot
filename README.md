@@ -46,7 +46,7 @@ This bot was created for educational purposes, showcasing various techniques and
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/educational-unethical-bot.git
+   git clone https://github.com/YOURNAME/educational-unethical-bot.git
    cd educational-unethical-bot
 
 2. **Install Dependencies**:
@@ -55,6 +55,10 @@ This bot was created for educational purposes, showcasing various techniques and
 
 3. **Set Up Discord Bot**:
    ```bash
-   Create a new application on the <a href="https://https://discord.com/developers/applications">Discord Developer Portal</a>.
+   Create a new application on the Discord Developer Portal.
    Copy the bot token and replace YOUR-OWN-TOKEN in the code with your token. 🔑
+
+3. **Run the Bot**:
+   ```bash
+   python your_bot_script.py
 
