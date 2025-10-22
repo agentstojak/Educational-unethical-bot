@@ -1,0 +1,52 @@
+# requirements.txt
+
+# Discord.py for interacting with the Discord API
+discord.py==2.3.2
+
+# Requests for making HTTP requests
+requests==2.31.0
+
+# PyAutoGUI for GUI automation
+PyAutoGUI==0.9.53
+
+# Pillow for image processing
+Pillow==10.0.0
+
+# psutil for system and process utilities
+psutil==5.9.5
+
+# PyGetWindow for getting window information
+PyGetWindow==0.0.9
+
+# PyCryptodome for cryptographic recipes and primitives
+pycryptodome==3.18.0
+
+# SpeechRecognition for speech recognition
+SpeechRecognition==3.10.0
+
+# pyaudio for audio processing
+pyaudio==0.2.11
+
+# opencv-python for computer vision tasks
+opencv-python==4.8.0.74
+
+# numpy for numerical operations
+numpy==1.26.0
+
+# pandas for data manipulation and analysis
+pandas==2.1.1
+
+# flask for web server
+flask==3.0.0
+
+# geopy for geocoding
+geopy==2.4.0
+
+# pyperclip for clipboard operations
+pyperclip==1.8.2
+
+# python-dotenv for environment variable management
+python-dotenv==1.0.0
+
+# schedule for task scheduling
+schedule==1.2.0
