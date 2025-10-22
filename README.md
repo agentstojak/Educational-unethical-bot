@@ -52,3 +52,9 @@ This bot was created for educational purposes, showcasing various techniques and
 2. **Install Dependencies**:
    ```bash
    pip install -r requirements.txt
+
+3. **Set Up Discord Bot**:
+   ```bash
+   Create a new application on the Discord Developer Portal.
+   Copy the bot token and replace YOUR-OWN-TOKEN in the code with your token. 🔑
+
