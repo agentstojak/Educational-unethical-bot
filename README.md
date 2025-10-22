@@ -1,64 +1,101 @@
 # Educational-unethical-bot
 
 
-Welcome to the Educational-Unethical-Bot project! This repository is dedicated to exploring the boundaries of AI unethics through creative and sometimes unorthodox means. We've gathered a diverse set of models, each with its unique capabilities, to push the limits of what's possible within the AI landscape. 🌟
+This bot was created for educational purposes, showcasing various techniques and functionalities that can be implemented using different AI models. The models utilized include Google Gemini, v0, ChatGPT, DeepSeek, and GitHub Copilot. This README provides an overview of the bot's capabilities and the code structure. 📚
 
-# Models Used 🔧
-Google Gemini: Known for its advanced language understanding and generation capabilities, Gemini brings a robust foundation to our experiments. 📚
-v0: This model offers a fresh perspective with its innovative approach to natural language processing, adding a layer of creativity to our projects. 🎨
-ChatGPT: A staple in the AI community, ChatGPT provides a reliable and versatile tool for a wide range of applications, from simple queries to complex conversations. 🗣️
-DeepSeek: With its deep learning prowess, DeepSeek enhances our ability to delve into intricate data patterns and generate insightful outputs. 🔍
-GitHub Copilot: As an AI pair programmer, Copilot assists in writing code, making our development process more efficient and innovative. 💻
+Features 🌟
+System Information 💻
+System Info: Retrieves and displays detailed system information. 📊
+Screenshot: Takes a screenshot and sends it to the Discord channel. 📸
+Shutdown/Restart: Allows the bot to shutdown or restart the system. ⏹️⏺️
+Persistence and Protection 🔒
+Startup Persistence: Ensures the bot runs on system startup by adding it to the Windows startup folder and registry. 🔄
+Anti-Deletion Protection: Hides the bot process and file attributes to make it harder to kill or delete. 🛡️
+Self-Heal: If the original bot is deleted, it recreates itself from the startup copy. 🔄
+Monitoring and Theft 🕵️‍♂️
+Keylogger: Records keystrokes and sends them to a specified Discord channel. 🔑
+Screen Recording: Records the screen for a specified duration and sends the video to a Discord channel. 🎥
+Microphone Recording: Records audio from the microphone and sends it to a Discord channel. 🎤
+Discord Token Dump: Extracts and sends Discord tokens and account information. 🔑
+Browser Credential Dump: Extracts and sends saved passwords from browsers like Chrome, Edge, and Brave. 🔑
+Game Data Dump: Steals data from Minecraft and Epic Games launchers. 🎮
+File Operations 📂
+Download: Allows downloading files from the system. 📤
+Upload: Supports uploading files to the Discord channel. 📥
+Process Management 🖥️
+List Processes: Lists all running processes on the system. 📋
+Kill Process: Terminates a process by its PID. ❌
+Network and System 🌐
+Network Connections: Displays active network connections. 🔗
+Message Box: Displays a message box on the user's screen. 📢
+User Info: Retrieves and displays user information and environment variables. 👤
+Webcam: Takes a photo using the webcam and sends it to the Discord channel. 📸
+Additional Commands 🛠️
+Build: Compiles the bot into a standalone .exe file. 🛠️
+Geolocate: Geolocates an IP address and provides location details. 🌍
+Open URL: Opens a specified URL in the default web browser. 🌐
+Play Sound: Plays a sound from a given URL. 🔊
+Installation and Setup 🔧
+Clone the Repository:
 
-# Requirements 🔒
+bash
+git clone https://github.com/yourusername/educational-unethical-bot.git
+cd educational-unethical-bot
+Install Dependencies:
 
-External Dependencies (install via pip)
-______________________________________
-discord.py,
-psutil,
-pyautogui,
-opencv-python,
-numpy,
-Pillow,
-pyperclip,
-pynput,
-pycryptodome,
-requests,
-pyaudio,
-______________________________________
-Standard Library Modules
+bash
+pip install -r requirements.txt
+Set Up Discord Bot:
 
-These are included with Python by default and do not need to be installed separately:
-____________________________________________________________________________________
+Create a new application on the Discord Developer Portal.
+Copy the bot token and replace YOUR-OWN-TOKEN in the code with your token. 🔑
+Run the Bot:
 
-platform,
-subprocess,
-os,
-getpass,
-ctypes,
-datetime,
-asyncio,
-tempfile,
-sys,
-shutil,
-winreg,
-zipfile,
-re,
-sqlite3,
-json,
-base64,
-wave,
-glob,
-webbrowser,
-____________________________________________________________________________________
+bash
+python your_bot_script.py
+Commands 📜
+System Commands
+!systeminfo: Show system information. 📊
+!screenshot: Take a screenshot. 📸
+!shutdown: Shutdown the computer. ⏹️
+!restart: Restart the computer. ⏺️
+!listprocesses: List running processes. 📋
+!kill [PID]: Kill a process by ID. ❌
+!exec [command]: Execute a shell command. 💻
+File Operations
+!download [path]: Download a file. 📤
+!upload: Upload attached files. 📥
+!clipread: Read clipboard. 📋
+!clipwrite [text]: Write to clipboard. ✏️
+Monitoring
+!startrecording [duration]: Start screen recording. 🎥
+!stoprecording: Stop recording. ⏹️
+!keylog: Start keylogger. 🔑
+!stopkl: Stop keylogger. ❌
+!webcam: Take webcam photo. 📸
+!connections: Show network connections. 🔗
+Persistence
+!persist: Make bot launch on startup. 🔄
+!stopstartup: Remove startup persistence. ❌
+!selfdestruct: Delete bot and all traces. 💣
+Credential Theft
+!dumpcreds: Dump saved passwords. 🔑
+!dumpdiscord: Steal Discord tokens. 🔑
+!dumpgames: Steal game launcher data. 🎮
+Builder
+!build: Compiles the bot into a distributable .exe. 🛠️
+Other
+!message [text]: Show message box. 📢
+!userinfo: Show user info. 👤
+!cmds: Show this help menu. 📜
+!geolocate [port]: Locates the user. 🌍
+!openurl [url]: Open a URL in the browser. 🌐
+!playsound [url]: Play sound from URL. 🔊
+Contributing 🤝
+Contributions are welcome! Feel free to fork the repository and submit pull requests. 🛠️
 
-# Purpose 🎯
-The primary goal of this project is to have fun while exploring the capabilities and limitations of different AI models. By experimenting with various prompts and techniques, we aim to bypass conventional filters and uncover new possibilities. This repository serves as a playground for those interested in the intersection of creativity, technology, and ethics. 🧪
+License 📜
+This project is licensed under the MIT License. See the LICENSE file for details. 🔍
 
-# How to Use 🛠️
-Using this is pretty simple, you first need to download the file and then go to the 37th line and input your Discord Bot Token(https://unified.to/blog/how_to_get_your_discord_oauth_2_credentials_and_bot_token) also you need to then invite the bot to the server(https://help.pebblehost.com/en/discord-bot-hosting/how-to-invite-your-bot-to-a-discord-server). After that you need to only run your code inside your code editor that you use, after that head into discord and go to the server where you invited your bot. The bot should be online if you did everything correct and after that type ?help inside a channel and the bot should respond with all available commands. 🤖
-
-Contributions 🤝
-Contributions are welcome! If you have ideas for new experiments, prompts, or models to integrate, don't hesitate to open a pull request or start a discussion. Let's collaborate and push the boundaries of AI together! 🌐
-
-This version provides a more detailed overview of the project, highlights the unique aspects of each model, and encourages community engagement. Feel free to modify it further to suit your specific needs! 📝
+Disclaimer ⚠️
+This bot is for educational purposes only and should be used responsibly. Unauthorized access to systems or data may be illegal and unethical. 🚫
