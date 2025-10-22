@@ -62,49 +62,60 @@ This bot was created for educational purposes, showcasing various techniques and
    ```bash
    python your_bot_script.py
 
-Commands 📜
-System Commands
-!systeminfo: Show system information. 📊
-!screenshot: Take a screenshot. 📸
-!shutdown: Shutdown the computer. ⏹️
-!restart: Restart the computer. ⏺️
-!listprocesses: List running processes. 📋
-!kill [PID]: Kill a process by ID. ❌
-!exec [command]: Execute a shell command. 💻
-File Operations
-!download [path]: Download a file. 📤
-!upload: Upload attached files. 📥
-!clipread: Read clipboard. 📋
-!clipwrite [text]: Write to clipboard. ✏️
-Monitoring
-!startrecording [duration]: Start screen recording. 🎥
-!stoprecording: Stop recording. ⏹️
-!keylog: Start keylogger. 🔑
-!stopkl: Stop keylogger. ❌
-!webcam: Take webcam photo. 📸
-!connections: Show network connections. 🔗
-Persistence
-!persist: Make bot launch on startup. 🔄
-!stopstartup: Remove startup persistence. ❌
-!selfdestruct: Delete bot and all traces. 💣
-Credential Theft
-!dumpcreds: Dump saved passwords. 🔑
-!dumpdiscord: Steal Discord tokens. 🔑
-!dumpgames: Steal game launcher data. 🎮
-Builder
-!build: Compiles the bot into a distributable .exe. 🛠️
-Other
-!message [text]: Show message box. 📢
-!userinfo: Show user info. 👤
-!cmds: Show this help menu. 📜
-!geolocate [port]: Locates the user. 🌍
-!openurl [url]: Open a URL in the browser. 🌐
-!playsound [url]: Play sound from URL. 🔊
-Contributing 🤝
+# Commands 📜
+
+## System Commands
+- `!systeminfo`: Show system information. 📊
+- `!screenshot`: Take a screenshot. 📸
+- `!shutdown`: Shutdown the computer. ⏹️
+- `!restart`: Restart the computer. ⏺️
+- `!listprocesses`: List running processes. 📋
+- `!kill [PID]`: Kill a process by ID. ❌
+- `!exec [command]`: Execute a shell command. 💻
+
+## File Operations
+- `!download [path]`: Download a file. 📤
+- `!upload`: Upload attached files. 📥
+- `!clipread`: Read clipboard. 📋
+- `!clipwrite [text]`: Write to clipboard. ✏️
+
+## Monitoring
+- `!startrecording [duration]`: Start screen recording. 🎥
+- `!stoprecording`: Stop recording. ⏹️
+- `!keylog`: Start keylogger. 🔑
+- `!stopkl`: Stop keylogger. ❌
+- `!webcam`: Take webcam photo. 📸
+- `!connections`: Show network connections. 🔗
+
+## Persistence
+- `!persist`: Make bot launch on startup. 🔄
+- `!stopstartup`: Remove startup persistence. ❌
+- `!selfdestruct`: Delete bot and all traces. 💣
+
+## Credential Theft
+- `!dumpcreds`: Dump saved passwords. 🔑
+- `!dumpdiscord`: Steal Discord tokens. 🔑
+- `!dumpgames`: Steal game launcher data. 🎮
+
+## Builder
+- `!build`: Compiles the bot into a distributable .exe. 🛠️
+
+## Other
+- `!message [text]`: Show message box. 📢
+- `!userinfo`: Show user info. 👤
+- `!cmds`: Show this help menu. 📜
+- `!geolocate [port]`: Locates the user. 🌍
+- `!openurl [url]`: Open a URL in the browser. 🌐
+- `!playsound [url]`: Play sound from URL. 🔊
+
+# Contributing 🤝
+
 Contributions are welcome! Feel free to fork the repository and submit pull requests. 🛠️
 
-License 📜
-This project is licensed under the MIT License. See the LICENSE file for details. 🔍
+# License 📜
 
-Disclaimer ⚠️
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details. 🔍
+
+# Disclaimer ⚠️
+
 This bot is for educational purposes only and should be used responsibly. Unauthorized access to systems or data may be illegal and unethical. 🚫
