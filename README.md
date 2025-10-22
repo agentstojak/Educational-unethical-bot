@@ -48,3 +48,7 @@ This bot was created for educational purposes, showcasing various techniques and
    ```bash
    git clone https://github.com/yourusername/educational-unethical-bot.git
    cd educational-unethical-bot
+
+2. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
